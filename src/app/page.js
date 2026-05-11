@@ -8,18 +8,10 @@ import { DndContext, DragOverlay } from "@dnd-kit/core"
 
 
 export default function Home() {
-  const [guests, setGuests] = useState([
-    { id: 1, name: "Jasmine Nieves", role: "Familiar" },
-    { id: 2, name: "Jorge Cordova", role: "Amigo" },
-  ])
+  const [guests, setGuests] = useState([])
 
-
-
-  const [tables, setTables] = useState([
-    { id: 1, name: "Mesa 1", x: 50, y: 50, cap: 8, shape: 'round', guests: [] },
-    { id: 2, name: "Mesa 2", x: 200, y: 50, cap: 6, shape: 'round', guests: [] },
-    { id: 3, name: "Mesa de honor", x: 120, y: 180, cap: 12, shape: 'rect', guests: [] },
-  ])
+  const [tables, setTables] = useState([])
+  
 
   const [panel, setPanel] = useState(null) // 
 
@@ -36,7 +28,7 @@ export default function Home() {
     const guestId = active.id
     const tableId = over.id
 
-  
+
   }
 
   function handleDragStart(event) {
@@ -75,7 +67,7 @@ export default function Home() {
               onClick={() => togglePanel('guests')}
               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${panel === 'guests' ? 'bg-pink-400 text-white border-pink-400' : 'bg-white text-gray-600 border-gray-200 hover:border-pink-300'}`}
             >
-               Invitados ({guests.length})
+              Invitados ({guests.length})
             </button>
             <button
               onClick={() => togglePanel('timeline')}
