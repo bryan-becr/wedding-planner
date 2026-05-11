@@ -1,5 +1,30 @@
 "use client"
 import { useState } from "react"
+import { useDroppable } from "@dnd-kit/core"
+
+
+function DroppableTable({ table, selectedTable, onMouseDown, onClick }) {
+    const { isOver, setNodeRef } = useDroppable({
+        id: table.id,
+    })
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={`absolute cursor-grab select-none ${selectedTable === table.id ? 'ring-2 ring-pink-400' : ''}`}
+            style={{ left: table.x, top: table.y }}
+            onMouseDown={onMouseDown}
+            onClick={onClick}
+        >
+            <div className={`bg-white border-2 flex flex-col items-center justify-center shadow-md transition-all
+        ${isOver ? 'border-green-400 bg-green-50 scale-110' : 'border-pink-200'}
+        ${table.shape === 'round' ? 'rounded-full w-24 h-24' : 'rounded-xl w-32 h-20'}`}>
+                <p className="text-xs font-semibold text-gray-700 text-center px-2">{table.name}</p>
+                <p className="text-xs text-gray-400">{table.guests.length}/{table.cap}</p>
+            </div>
+        </div>
+    )
+}
 
 export default function TableMap({ guests, tables, setTables }) {
     const [dragging, setDragging] = useState(null)
@@ -10,6 +35,9 @@ export default function TableMap({ guests, tables, setTables }) {
     const [newTableName, setNewTableName] = useState("")
     const [newTableCap, setNewTableCap] = useState(8)
     const [newTableShape, setNewTableShape] = useState("round")
+    const [showElementMenu, setShowElementMenu] = useState(false)
+    const [elements, setElements] = useState([])
+    
 
 
     function onMouseDown(e, tableId) {
@@ -64,6 +92,26 @@ export default function TableMap({ guests, tables, setTables }) {
         setNewTableShape("round")
     }
 
+    function addElement(type) {
+        const tipos = {
+            escenario: { label: 'Escenario', emoji: '🎭', w: 160, h: 80, color: 'bg-purple-100 border-purple-300' },
+            pista: { label: 'Pista de baile', emoji: '💃', w: 150, h: 150, color: 'bg-yellow-100 border-yellow-300' },
+            barra: { label: 'Barra de bebidas', emoji: '🍹', w: 120, h: 60, color: 'bg-blue-100 border-blue-300' },
+            banos: { label: 'Baños', emoji: '🚻', w: 80, h: 80, color: 'bg-green-100 border-green-300' },
+            entrada: { label: 'Entrada', emoji: '🚪', w: 80, h: 50, color: 'bg-orange-100 border-orange-300' },
+        }
+        const tipo = tipos[type]
+        const newElement = {
+            id: Date.now(),
+            type,
+            ...tipo,
+            x: 150,
+            y: 150,
+        }
+        setElements([...elements, newElement])
+        setShowElementMenu(false)
+    }
+
     return (
         <div>
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Plano de mesas</h2>
@@ -74,30 +122,86 @@ export default function TableMap({ guests, tables, setTables }) {
                 onMouseUp={onMouseUp}
             >
                 {tables.map(table => (
-                    <div
+                    <DroppableTable
                         key={table.id}
-                        className={`absolute cursor-grab select-none ${selectedTable === table.id ? 'ring-2 ring-pink-400' : ''}`}
-                        style={{ left: table.x, top: table.y }}
+                        table={table}
+                        selectedTable={selectedTable}
                         onMouseDown={(e) => onMouseDown(e, table.id)}
                         onClick={() => setSelectedTable(table.id)}
-                    >
-                        <div className={`bg-white border-2 border-pink-200 flex flex-col items-center justify-center shadow-md hover:shadow-lg
-                        ${table.shape === 'round' ? 'rounded-full w-24 h-24' : 'rounded-xl w-32 h-20'}`}>
-                            <p className="text-xs font-semibold text-gray-700 text-center px-2">{table.name}</p>
-                            <p className="text-xs text-gray-400">{table.guests.length}/{table.cap}</p>
-                        </div>
-                    </div>
-
+                    />
                 ))}
+
+
+                {elements.map(el => (
+                    <div
+                        key={el.id}
+                        className={`absolute border-2 rounded-xl flex flex-col items-center justify-center select-none cursor-grab ${el.color}`}
+                        style={{ left: el.x, top: el.y, width: el.w, height: el.h }}
+                        onMouseDown={(e) => {
+                            const offsetX = e.clientX - el.x
+                            const offsetY = e.clientY - el.y
+                            const onMove = (ev) => {
+                                setElements(prev => prev.map(item =>
+                                    item.id === el.id
+                                        ? { ...item, x: ev.clientX - offsetX, y: ev.clientY - offsetY }
+                                        : item
+                                ))
+                            }
+                            const onUp = () => {
+                                document.removeEventListener('mousemove', onMove)
+                                document.removeEventListener('mouseup', onUp)
+                            }
+                            document.addEventListener('mousemove', onMove)
+                            document.addEventListener('mouseup', onUp)
+                        }}
+                    >
+                        <span className="text-2xl">{el.emoji}</span>
+                        <span className="text-xs font-medium text-gray-600 mt-1">{el.label}</span>
+                    </div>
+                ))}
+
+                
+
 
                 <div className="flex items-center justify-between mb-3">
                     <p className="text-sm text-gray-400">{tables.length} mesas en total</p>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="bg-pink-400 hover:bg-pink-500 text-white text-sm px-4 py-2 rounded-lg"
-                    >
-                        + Agregar mesa
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className="bg-pink-400 hover:bg-pink-500 text-white text-sm px-4 py-2 rounded-lg"
+                        >
+                            + Agregar mesa
+                        </button>
+
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowElementMenu(!showElementMenu)}
+                                className="bg-white border border-gray-200 hover:border-pink-300 text-gray-600 text-sm px-4 py-2 rounded-lg"
+                            >
+                                + Elemento ▾
+                            </button>
+                            {showElementMenu && (
+                                <div className="absolute right-0 top-10 bg-white border border-gray-200 rounded-xl shadow-lg z-10 overflow-hidden">
+                                    {[
+                                        { type: 'escenario', label: 'Escenario', emoji: '🎭' },
+                                        { type: 'pista', label: 'Pista de baile', emoji: '💃' },
+                                        { type: 'barra', label: 'Barra de bebidas', emoji: '🍹' },
+                                        { type: 'banos', label: 'Baños', emoji: '🚻' },
+                                        { type: 'entrada', label: 'Entrada', emoji: '🚪' },
+                                    ].map(el => (
+                                        <button
+                                            key={el.type}
+                                            onClick={() => addElement(el.type)}
+                                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left"
+                                        >
+                                            <span>{el.emoji}</span>
+                                            <span>{el.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
 

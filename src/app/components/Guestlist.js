@@ -1,7 +1,32 @@
 "use client"
 import { useState } from "react"
+import { useDraggable } from "@dnd-kit/core"
 
+function DraggableGuest({ guest }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: guest.id,
+  })
 
+  const style = {
+    transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : undefined,
+    opacity: isDragging ? 0 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between cursor-grab active:cursor-grabbing"
+    >
+      <div>
+        <p className="text-sm font-medium text-gray-800">{guest.name}</p>
+        <p className="text-xs text-gray-400">{guest.role}</p>
+      </div>
+    </div>
+  )
+}
 export default function Guestlist({ guests, setGuests, tables }) {
   const [newName, setNewName] = useState("")
 
@@ -36,12 +61,9 @@ export default function Guestlist({ guests, setGuests, tables }) {
         {guests.map((guest) => {
           const mesaAsignada = tables.find(t => t.guests.find(g => g.id === guest.id))
           return (
-            <div key={guest.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-800">{guest.name}</p>
-                <p className="text-xs text-gray-400">{guest.role}</p>
-              </div>
-              <span className={`text-xs px-2 py-1 rounded-full ${mesaAsignada ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+            <div key={guest.id} className="flex flex-col gap-1">
+              <DraggableGuest guest={guest} />
+              <span className={`text-xs px-2 py-1 rounded-full text-center ${mesaAsignada ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                 {mesaAsignada ? mesaAsignada.name : 'Sin mesa'}
               </span>
             </div>
