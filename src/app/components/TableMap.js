@@ -4,38 +4,38 @@ import { useDroppable } from "@dnd-kit/core"
 
 
 function DroppableTable({ table, selectedTable, onMouseDown, onClick, onResize }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: table.id,
-  })
+    const { isOver, setNodeRef } = useDroppable({
+        id: table.id,
+    })
 
-  return (
-    <div
-      ref={setNodeRef}
-      className={`absolute cursor-grab select-none ${selectedTable === table.id ? 'ring-2 ring-pink-400' : ''}`}
-      style={{ left: table.x, top: table.y }}
-      onMouseDown={onMouseDown}
-      onClick={onClick}
-    >
-      <div
-        className={`bg-white border-2 flex flex-col items-center justify-center shadow-md transition-all relative
+    return (
+        <div
+            ref={setNodeRef}
+            className={`absolute cursor-grab select-none ${selectedTable === table.id ? 'ring-2 ring-pink-400' : ''}`}
+            style={{ left: table.x, top: table.y }}
+            onMouseDown={onMouseDown}
+            onClick={onClick}
+        >
+            <div
+                className={`bg-white border-2 flex flex-col items-center justify-center shadow-md transition-all relative
           ${isOver ? 'border-green-400 bg-green-50' : 'border-pink-200'}
           ${table.shape === 'round' ? 'rounded-full' : 'rounded-xl'}`}
-        style={{ width: table.w || 96, height: table.h || 96 }}
-      >
-        <p className="text-xs font-semibold text-gray-700 text-center px-2">{table.name}</p>
-        <p className="text-xs text-gray-400">{table.guests.length}/{table.cap}</p>
+                style={{ width: table.w || 96, height: table.h || 96 }}
+            >
+                <p className="text-xs font-semibold text-gray-700 text-center px-2">{table.name}</p>
+                <p className="text-xs text-gray-400">{table.guests.length}/{table.cap}</p>
 
-        {/* Handle de resize */}
-        <div
-          className="absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-gray-300 rounded-sm cursor-se-resize"
-          onMouseDown={(e) => {
-            e.stopPropagation()
-            onResize(e, table)
-          }}
-        />
-      </div>
-    </div>
-  )
+                {/* Handle de resize */}
+                <div
+                    className="absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-gray-300 rounded-sm cursor-se-resize"
+                    onMouseDown={(e) => {
+                        e.stopPropagation()
+                        onResize(e, table)
+                    }}
+                />
+            </div>
+        </div>
+    )
 }
 
 export default function TableMap({ guests, tables, setTables }) {
@@ -49,7 +49,7 @@ export default function TableMap({ guests, tables, setTables }) {
     const [newTableShape, setNewTableShape] = useState("round")
     const [showElementMenu, setShowElementMenu] = useState(false)
     const [elements, setElements] = useState([])
-    
+
 
 
     function onMouseDown(e, tableId) {
@@ -125,24 +125,24 @@ export default function TableMap({ guests, tables, setTables }) {
     }
 
     function handleTableResize(e, table) {
-  const startX = e.clientX
-  const startY = e.clientY
-  const startW = table.w || 96
-  const startH = table.h || 96
-  const onMove = (ev) => {
-    const newW = Math.max(60, startW + ev.clientX - startX)
-    const newH = Math.max(60, startH + ev.clientY - startY)
-    setTables(prev => prev.map(t =>
-      t.id === table.id ? { ...t, w: newW, h: newH } : t
-    ))
-  }
-  const onUp = () => {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-  }
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
-}
+        const startX = e.clientX
+        const startY = e.clientY
+        const startW = table.w || 96
+        const startH = table.h || 96
+        const onMove = (ev) => {
+            const newW = Math.max(60, startW + ev.clientX - startX)
+            const newH = Math.max(60, startH + ev.clientY - startY)
+            setTables(prev => prev.map(t =>
+                t.id === table.id ? { ...t, w: newW, h: newH } : t
+            ))
+        }
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove)
+            document.removeEventListener('mouseup', onUp)
+        }
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+    }
 
 
     return (
@@ -155,75 +155,87 @@ export default function TableMap({ guests, tables, setTables }) {
                 onMouseUp={onMouseUp}
             >
                 {tables.map(table => (
-  <DroppableTable
-    key={table.id}
-    table={table}
-    selectedTable={selectedTable}
-    onMouseDown={(e) => onMouseDown(e, table.id)}
-    onClick={() => setSelectedTable(table.id)}
-    onResize={(e, table) => handleTableResize(e, table)}
-  />
-))}
+                    <DroppableTable
+                        key={table.id}
+                        table={table}
+                        selectedTable={selectedTable}
+                        onMouseDown={(e) => onMouseDown(e, table.id)}
+                        onClick={() => setSelectedTable(table.id)}
+                        onResize={(e, table) => handleTableResize(e, table)}
+                    />
+                ))}
 
 
                 {elements.map(el => (
-  <div
-    key={el.id}
-    className={`absolute border-2 rounded-xl flex flex-col items-center justify-center select-none ${el.color}`}
-    style={{ left: el.x, top: el.y, width: el.w, height: el.h }}
-    onMouseDown={(e) => {
-      if (e.target.dataset.resize) return
-      const offsetX = e.clientX - el.x
-      const offsetY = e.clientY - el.y
-      const onMove = (ev) => {
-        setElements(prev => prev.map(item =>
-          item.id === el.id
-            ? { ...item, x: ev.clientX - offsetX, y: ev.clientY - offsetY }
-            : item
-        ))
-      }
-      const onUp = () => {
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('mouseup', onUp)
-      }
-      document.addEventListener('mousemove', onMove)
-      document.addEventListener('mouseup', onUp)
-    }}
-  >
-    <span className="text-2xl">{el.emoji}</span>
-    <span className="text-xs font-medium text-gray-600 mt-1">{el.label}</span>
+                    <div
+                        key={el.id}
+                        className={`absolute border-2 rounded-xl flex flex-col items-center justify-center select-none ${el.color}`}
+                        style={{ left: el.x, top: el.y, width: el.w, height: el.h }}
+                        onMouseDown={(e) => {
+                            if (e.target.dataset.resize) return
+                            const offsetX = e.clientX - el.x
+                            const offsetY = e.clientY - el.y
+                            const onMove = (ev) => {
+                                setElements(prev => prev.map(item =>
+                                    item.id === el.id
+                                        ? { ...item, x: ev.clientX - offsetX, y: ev.clientY - offsetY }
+                                        : item
+                                ))
+                            }
+                            const onUp = () => {
+                                document.removeEventListener('mousemove', onMove)
+                                document.removeEventListener('mouseup', onUp)
+                            }
+                            document.addEventListener('mousemove', onMove)
+                            document.addEventListener('mouseup', onUp)
+                        }}
+                    >
+                        <span className="text-2xl">{el.emoji}</span>
+                        <span className="text-xs font-medium text-gray-600 mt-1">{el.label}</span>
 
-    {/* Handle de resize */}
-    <div
-      data-resize="true"
-      className="absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-gray-300 rounded-sm cursor-se-resize"
-      onMouseDown={(e) => {
-        e.stopPropagation()
-        const startX = e.clientX
-        const startY = e.clientY
-        const startW = el.w
-        const startH = el.h
-        const onMove = (ev) => {
-          const newW = Math.max(60, startW + ev.clientX - startX)
-          const newH = Math.max(40, startH + ev.clientY - startY)
-          setElements(prev => prev.map(item =>
-            item.id === el.id
-              ? { ...item, w: newW, h: newH }
-              : item
-          ))
-        }
-        const onUp = () => {
-          document.removeEventListener('mousemove', onMove)
-          document.removeEventListener('mouseup', onUp)
-        }
-        document.addEventListener('mousemove', onMove)
-        document.addEventListener('mouseup', onUp)
-      }}
-    />
-  </div>
-))}
 
-                
+                        {/* Botón eliminar */}
+                        <div
+                            className="absolute top-1 right-1 w-5 h-5 bg-white border border-red-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-50"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                setElements(prev => prev.filter(item => item.id !== el.id))
+                            }}
+                        >
+                            <span className="text-red-400 text-xs">✕</span>
+                        </div>
+                        {/* Handle de resize */}
+                        <div
+                            data-resize="true"
+                            className="absolute bottom-1 right-1 w-4 h-4 bg-white border-2 border-gray-300 rounded-sm cursor-se-resize"
+                            onMouseDown={(e) => {
+                                e.stopPropagation()
+                                const startX = e.clientX
+                                const startY = e.clientY
+                                const startW = el.w
+                                const startH = el.h
+                                const onMove = (ev) => {
+                                    const newW = Math.max(60, startW + ev.clientX - startX)
+                                    const newH = Math.max(40, startH + ev.clientY - startY)
+                                    setElements(prev => prev.map(item =>
+                                        item.id === el.id
+                                            ? { ...item, w: newW, h: newH }
+                                            : item
+                                    ))
+                                }
+                                const onUp = () => {
+                                    document.removeEventListener('mousemove', onMove)
+                                    document.removeEventListener('mouseup', onUp)
+                                }
+                                document.addEventListener('mousemove', onMove)
+                                document.addEventListener('mouseup', onUp)
+                            }}
+                        />
+                    </div>
+                ))}
+
+
 
 
                 <div className="flex items-center justify-between mb-3">
@@ -312,6 +324,17 @@ export default function TableMap({ guests, tables, setTables }) {
                             })
                         }
                     </select>
+
+                    <button
+                        onClick={() => {
+                            setTables(tables.filter(t => t.id !== selectedTable))
+                            setSelectedTable(null)
+                        }}
+                        className="w-full mt-3 py-2 rounded-lg border border-red-200 text-red-400 text-sm hover:bg-red-50"
+                    >
+                        🗑 Eliminar mesa
+                    </button>
+
                 </div>
             )}
             {showModal && (

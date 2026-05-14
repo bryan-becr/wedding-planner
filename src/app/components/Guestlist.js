@@ -62,7 +62,17 @@ export default function Guestlist({ guests, setGuests, tables }) {
           const mesaAsignada = tables.find(t => t.guests.find(g => g.id === guest.id))
           return (
             <div key={guest.id} className="flex flex-col gap-1">
-              <DraggableGuest guest={guest} />
+              <div className="relative">
+                <DraggableGuest guest={guest} />
+                <button
+                  onClick={() => {
+                    setGuests(guests.filter(g => g.id !== guest.id))
+                  }}
+                  className="absolute top-1 right-1 w-5 h-5 bg-white border border-red-200 rounded-full flex items-center justify-center hover:bg-red-50"
+                >
+                  <span className="text-red-400 text-xs">✕</span>
+                </button>
+              </div>
               <span className={`text-xs px-2 py-1 rounded-full text-center ${mesaAsignada ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
                 {mesaAsignada ? mesaAsignada.name : 'Sin mesa'}
               </span>
