@@ -18,7 +18,7 @@ export default function Home() {
 
   const [panel, setPanel] = useState(null) // 
 
-  const [activeGuest, setActiveGluest] = useState(null)
+  const [activeGuest, setActiveGuest] = useState(null)
 
   const [session, setSession] = useState(null)
 
@@ -40,11 +40,12 @@ export default function Home() {
   }
 
 
-
+//
+  
   function handleDragStart(event) {
-    const guest = guests.find(g => g.id === event.active.id)
-    setActiveGuest(guest)
-  }
+  const guest = guests.find(g => String(g.id) === String(event.active.id))
+  setActiveGuest(guest)
+}
 
   function handleDragEnd(event) {
     setActiveGuest(null)
@@ -54,7 +55,7 @@ export default function Home() {
     const guestId = active.id
     const tableId = over.id
 
-    const guest = guests.find(g => g.id === guestId)
+   const guest = guests.find(g => String(g.id) === String(guestId))
     if (!guest) return
 
     setTables(tables.map(t => {
@@ -115,7 +116,7 @@ export default function Home() {
           {panel && (
             <div className="w-80 bg-white border-l border-gray-200 p-6 overflow-y-auto transition-all">
               {panel === 'guests' && (
-                <GuestList guests={guests} setGuests={setGuests} tables={tables} />
+                <GuestList guests={guests} setGuests={setGuests} tables={tables} wedding={selectedWedding} />
               )}
               {panel === 'timeline' && (
                 <Timeline />

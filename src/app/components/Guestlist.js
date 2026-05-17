@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useDraggable } from "@dnd-kit/core"
+import { supabase } from "../lib/supabase"
 
 function DraggableGuest({ guest }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -27,16 +28,33 @@ function DraggableGuest({ guest }) {
     </div>
   )
 }
-export default function Guestlist({ guests, setGuests, tables }) {
+export default function Guestlist({ guests, setGuests, tables, wedding }) {
   const [newName, setNewName] = useState("")
 
-  function addGuest() {
-    if (!newName) return
-    const newGuest = { id: Date.now(), name: newName, role: "Invitado" }
+  async function addGuest() {
+  if (!newName) return
+  
+  console.log('wedding:', wedding)
+  console.log('newName:', newName)
+  
+  const { data, error } = await supabase
+    .from('guests')
+    .insert([{
+      wedding_id: wedding.id,
+      nombre: newName,
+      rol: 'Invitado'
+    }])
+    .select()
+
+  console.log('data:', data)
+  console.log('error:', error)
+
+  if (!error) {
+    const newGuest = { id: data[0].id, name: data[0].nombre, role: data[0].rol, table: null }
     setGuests([...guests, newGuest])
     setNewName("")
   }
-
+}
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Lista de invitados</h2>
