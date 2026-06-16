@@ -1,6 +1,7 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useDroppable } from "@dnd-kit/core"
+import { supabase } from "../lib/supabase"
 
 
 function DroppableTable({ table, selectedTable, onMouseDown, onClick, onResize }) {
@@ -38,7 +39,7 @@ function DroppableTable({ table, selectedTable, onMouseDown, onClick, onResize }
     )
 }
 
-export default function TableMap({ guests, tables, setTables }) {
+export default function TableMap({ guests, tables, setTables, wedding }) {
     const [dragging, setDragging] = useState(null)
 
     const [selectedTable, setSelectedTable] = useState(null)
@@ -50,6 +51,29 @@ export default function TableMap({ guests, tables, setTables }) {
     const [showElementMenu, setShowElementMenu] = useState(false)
     const [elements, setElements] = useState([])
 
+    useEffect(() => {
+        if (!wedding) return
+        async function loadElements() {
+            const { data } = await supabase
+                .from('elements')
+                .select('*')
+                .eq('wedding_id', wedding.id)
+
+                console.log('elementos cargados:', data)
+            if (data) setElements(data)
+        }
+        loadElements()
+    }, [wedding])
+
+
+
+    function onMouseUp() {
+        if (dragging) {
+            const movedTable = tables.find(t => t.id === dragging.id)
+            if (movedTable) saveTable(movedTable)
+        }
+        setDragging(null)
+    }
 
 
     function onMouseDown(e, tableId) {
@@ -76,51 +100,96 @@ export default function TableMap({ guests, tables, setTables }) {
 
     function assignGuest(guestId) {
         const guest = guests.find(g => g.id === parseInt(guestId))
-        setTables(tables.map(t => {
-
+        const updatedTables = tables.map(t => {
             const sinInvitado = t.guests.filter(g => g.id !== guest.id)
-
             if (t.id === selectedTable) {
                 return { ...t, guests: [...sinInvitado, guest] }
             }
             return { ...t, guests: sinInvitado }
-        }))
+        })
+        setTables(updatedTables)
+        updatedTables.forEach(t => saveTable(t))
     }
 
-    function addTable() {
+    async function addTable() {
         const newTable = {
-            id: Date.now(),
-            name: newTableName || `Mesa ${tables.length + 1}`,
+            wedding_id: wedding.id,
+            nombre: newTableName || `Mesa ${tables.length + 1}`,
             x: 100,
             y: 100,
-            cap: newTableCap,
-            shape: newTableShape,
+            capacidad: newTableCap,
+            forma: newTableShape,
             guests: []
         }
-        setTables([...tables, newTable])
+
+        const { data, error } = await supabase
+            .from('tables')
+            .insert([newTable])
+            .select()
+
+        if (!error && data) {
+            const t = data[0]
+            setTables([...tables, {
+                id: t.id,
+                name: t.nombre,
+                x: t.x,
+                y: t.y,
+                w: t.w || 96,
+                h: t.h || 96,
+                cap: t.capacidad,
+                shape: t.forma,
+                guests: t.guests || []
+            }])
+        }
+
         setShowModal(false)
         setNewTableName("")
         setNewTableCap(8)
         setNewTableShape("round")
     }
 
-    function addElement(type) {
+
+    async function saveTable(updatedTable) {
+        await supabase
+            .from('tables')
+            .update({
+                x: updatedTable.x,
+                y: updatedTable.y,
+                w: updatedTable.w || 96,
+                h: updatedTable.h || 96,
+                forma: updatedTable.shape,
+                guests: updatedTable.guests
+            })
+            .eq('id', updatedTable.id)
+    }
+
+    async function addElement(type) {
         const tipos = {
-            escenario: { label: 'Escenario', emoji: '🎭', w: 160, h: 80, color: 'bg-purple-100 border-purple-300' },
-            pista: { label: 'Pista de baile', emoji: '💃', w: 150, h: 150, color: 'bg-yellow-100 border-yellow-300' },
-            barra: { label: 'Barra de bebidas', emoji: '🍹', w: 120, h: 60, color: 'bg-blue-100 border-blue-300' },
-            banos: { label: 'Baños', emoji: '🚻', w: 80, h: 80, color: 'bg-green-100 border-green-300' },
-            entrada: { label: 'Entrada', emoji: '🚪', w: 80, h: 50, color: 'bg-orange-100 border-orange-300' },
+            escenario: { label: 'Escenario', emoji: '', w: 160, h: 80, color: 'bg-purple-100 border-purple-300' },
+            pista: { label: 'Pista de baile', emoji: '', w: 150, h: 150, color: 'bg-yellow-100 border-yellow-300' },
+            barra: { label: 'Barra de bebidas', emoji: '', w: 120, h: 60, color: 'bg-blue-100 border-blue-300' },
+            banos: { label: 'Baños', emoji: '', w: 80, h: 80, color: 'bg-green-100 border-green-300' },
+            entrada: { label: 'Entrada', emoji: '', w: 80, h: 50, color: 'bg-orange-100 border-orange-300' },
         }
         const tipo = tipos[type]
-        const newElement = {
-            id: Date.now(),
-            type,
-            ...tipo,
-            x: 150,
-            y: 150,
+
+        const { data, error } = await supabase
+            .from('elements')
+            .insert([{
+                wedding_id: wedding.id,
+                type,
+                ...tipo,
+                x: 150,
+                y: 150,
+            }])
+            .select()
+
+        console.log('elemento guardado:', data)  
+        console.log('error elemento:', error)
+
+        if (!error && data) {
+            setElements([...elements, data[0]])
         }
-        setElements([...elements, newElement])
         setShowElementMenu(false)
     }
 
@@ -198,8 +267,9 @@ export default function TableMap({ guests, tables, setTables }) {
                         <div
                             className="absolute top-1 right-1 w-5 h-5 bg-white border border-red-200 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-50"
                             onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
+                            onClick={async (e) => {
                                 e.stopPropagation()
+                                await supabase.from('elements').delete().eq('id', el.id)
                                 setElements(prev => prev.filter(item => item.id !== el.id))
                             }}
                         >
@@ -326,7 +396,12 @@ export default function TableMap({ guests, tables, setTables }) {
                     </select>
 
                     <button
-                        onClick={() => {
+                        onClick={async () => {
+                            await supabase
+                                .from('tables')
+                                .delete()
+                                .eq('id', selectedTable)
+
                             setTables(tables.filter(t => t.id !== selectedTable))
                             setSelectedTable(null)
                         }}

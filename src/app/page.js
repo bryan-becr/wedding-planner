@@ -35,6 +35,77 @@ export default function Home() {
     })
   }, [])
 
+  useEffect(() => {
+  if (!selectedWedding) return  //  espera a que haya una boda seleccionada
+
+  async function loadGuests() {
+    const { data } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('wedding_id', selectedWedding.id)  //  solo los de esta boda
+
+    if (data) {
+      setGuests(data.map(g => ({
+        id: g.id,
+        name: g.nombre,
+        role: g.rol,
+        table: null
+      })))
+    }
+  }
+
+  loadGuests()
+}, [selectedWedding])  //  se ejecuta cada vez que cambias de boda
+
+
+// Agrega este useEffect nuevo (junto al que ya tienes)
+useEffect(() => {
+  if (!selectedWedding) return
+
+  async function loadData() {
+    // Cargar invitados
+    const { data: guestsData } = await supabase
+      .from('guests')
+      .select('*')
+      .eq('wedding_id', selectedWedding.id)
+
+    if (guestsData) {
+      setGuests(guestsData.map(g => ({
+        id: g.id,
+        name: g.nombre,
+        role: g.rol,
+        table: null
+      })))
+    }
+
+    // Cargar mesas
+    const { data: tablesData } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('wedding_id', selectedWedding.id)
+
+    if (tablesData) {
+      setTables(tablesData.map(t => ({
+        id: t.id,
+        name: t.nombre,
+        x: t.x,
+        y: t.y,
+        w: t.w,
+        h: t.h,
+        cap: t.capacidad,
+        shape: t.forma,
+        guests: t.guests || []
+      })))
+    }
+    
+
+  }
+
+  loadData()
+}, [selectedWedding])
+
+
+
   function togglePanel(name) {
     setPanel(panel === name ? null : name)
   }
@@ -110,7 +181,7 @@ export default function Home() {
         <div className="flex flex-1 overflow-hidden">
 
           <div className="flex-1 p-6">
-            <TableMap guests={guests} tables={tables} setTables={setTables} />
+           <TableMap guests={guests} tables={tables} setTables={setTables} wedding={selectedWedding} />
           </div>
 
           {panel && (

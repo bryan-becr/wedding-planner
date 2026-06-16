@@ -9,6 +9,7 @@ export default function WeddingList({ session, onSelect }) {
   const [newNombre, setNewNombre] = useState("")
   const [newFecha, setNewFecha] = useState("")
   const [newLugar, setNewLugar] = useState("")
+  const [confirmDelete, setConfirmDelete] = useState(null)
 
   useEffect(() => {
     loadWeddings()
@@ -29,7 +30,7 @@ export default function WeddingList({ session, onSelect }) {
     if (!newNombre) return
     const { data, error } = await supabase
       .from('weddings')
-      .insert([{ 
+      .insert([{
         user_id: session.user.id,
         nombre: newNombre,
         fecha: newFecha || null,
@@ -45,6 +46,13 @@ export default function WeddingList({ session, onSelect }) {
       setNewLugar("")
     }
   }
+
+  async function deleteWedding(id) {
+    await supabase.from('weddings').delete().eq('id', id)
+    setWeddings(weddings.filter(w => w.id !== id))
+    setConfirmDelete(null)
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -84,12 +92,22 @@ export default function WeddingList({ session, onSelect }) {
             {weddings.map(w => (
               <div
                 key={w.id}
-                onClick={() => onSelect(w)}
-                className="bg-white rounded-xl border border-gray-100 p-5 cursor-pointer hover:border-pink-200 hover:shadow-sm transition-all"
+                className="bg-white rounded-xl border border-gray-100 p-5 hover:border-pink-200 hover:shadow-sm transition-all relative"
               >
-                <p className="font-medium text-gray-800 mb-1">{w.nombre}</p>
-                <p className="text-xs text-gray-400">{w.fecha || 'Sin fecha'}</p>
-                <p className="text-xs text-gray-400">{w.lugar || 'Sin lugar'}</p>
+                <div onClick={() => onSelect(w)} className="cursor-pointer">
+                  <p className="font-medium text-gray-800 mb-1">{w.nombre}</p>
+                  <p className="text-xs text-gray-400">{w.fecha || 'Sin fecha'}</p>
+                  <p className="text-xs text-gray-400">{w.lugar || 'Sin lugar'}</p>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setConfirmDelete(w.id)
+                  }}
+                  className="absolute top-3 right-3 w-6 h-6 bg-white border border-red-200 rounded-full flex items-center justify-center hover:bg-red-50"
+                >
+                  <span className="text-red-400 text-xs">✕</span>
+                </button>
               </div>
             ))}
           </div>
@@ -144,6 +162,35 @@ export default function WeddingList({ session, onSelect }) {
           </div>
         </div>
       )}
+
+
+      {confirmDelete && (
+  <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+    <div className="bg-white rounded-xl p-6 w-80 shadow-xl">
+      <h3 className="text-base font-semibold text-gray-800 mb-2">¿Eliminar boda?</h3>
+      <p className="text-sm text-gray-400 mb-4">Esta acción no se puede deshacer. Se eliminarán también las mesas, invitados y elementos.</p>
+      <div className="flex gap-2">
+        <button
+          onClick={() => setConfirmDelete(null)}
+          className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => deleteWedding(confirmDelete)}
+          className="flex-1 py-2 rounded-lg bg-red-400 hover:bg-red-500 text-white text-sm"
+        >
+          Eliminar
+        </button>
+      </div>
     </div>
+  </div>
+)}
+    </div>
+
+
+      
   )
+
+  
 }

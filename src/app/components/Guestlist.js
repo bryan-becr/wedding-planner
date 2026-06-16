@@ -32,29 +32,29 @@ export default function Guestlist({ guests, setGuests, tables, wedding }) {
   const [newName, setNewName] = useState("")
 
   async function addGuest() {
-  if (!newName) return
-  
-  console.log('wedding:', wedding)
-  console.log('newName:', newName)
-  
-  const { data, error } = await supabase
-    .from('guests')
-    .insert([{
-      wedding_id: wedding.id,
-      nombre: newName,
-      rol: 'Invitado'
-    }])
-    .select()
+    if (!newName) return
 
-  console.log('data:', data)
-  console.log('error:', error)
+    console.log('wedding:', wedding)
+    console.log('newName:', newName)
 
-  if (!error) {
-    const newGuest = { id: data[0].id, name: data[0].nombre, role: data[0].rol, table: null }
-    setGuests([...guests, newGuest])
-    setNewName("")
+    const { data, error } = await supabase
+      .from('guests')
+      .insert([{
+        wedding_id: wedding.id,
+        nombre: newName,
+        rol: 'Invitado'
+      }])
+      .select()
+
+    console.log('data:', data)
+    console.log('error:', error)
+
+    if (!error) {
+      const newGuest = { id: data[0].id, name: data[0].nombre, role: data[0].rol, table: null }
+      setGuests([...guests, newGuest])
+      setNewName("")
+    }
   }
-}
   return (
     <div>
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Lista de invitados</h2>
@@ -83,7 +83,12 @@ export default function Guestlist({ guests, setGuests, tables, wedding }) {
               <div className="relative">
                 <DraggableGuest guest={guest} />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    await supabase
+                      .from('guests')
+                      .delete()
+                      .eq('id', guest.id)
+
                     setGuests(guests.filter(g => g.id !== guest.id))
                   }}
                   className="absolute top-1 right-1 w-5 h-5 bg-white border border-red-200 rounded-full flex items-center justify-center hover:bg-red-50"
